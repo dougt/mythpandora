@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mythuitheme SYSTEM "http://www.mythtv.org/schema/mythuitheme.dtd">
+<mythuitheme>
+    <window name="pandora">
+
+      <fontdef name="debug" face="Arial">
+	<pixelsize>12</pixelsize>
+	<color>#ffffff</color>
+      </fontdef>
+
+      <fontdef name="song" face="Arial">
+	<pixelsize>26</pixelsize>
+	<color>#ffffff</color>
+      </fontdef>
+
+      <fontdef name="other" face="Arial">
+	<pixelsize>20</pixelsize>
+	<color>#ffffff</color>
+      </fontdef>
+
+        <textarea name="title">
+            <position>1000,1000</position>
+            <value>Myth Pandora</value>
+        </textarea>
+
+        <textarea name="station">
+            <position>1000,1000</position>
+            <font>large</font>
+        </textarea>
+
+        <imagetype name="coverart">
+          <area>60,100,160,160</area>
+          <filename>/etc/alternatives/emacs-16x16.png</filename>
+        </imagetype>
+
+        <textarea name="song">
+            <area>270,100,240,150</area>
+            <font>song</font>
+            <align>allcenter</align>
+            <multiline>no</multiline>
+	    <value>No song title, yet.</value>
+        </textarea>
+
+        <textarea name="artist">
+            <area>270,150,240,150</area>
+            <font>other</font>
+            <align>allcenter</align>
+            <multiline>no</multiline>
+	    <value>No artist, yet.</value>
+        </textarea>
+
+        <textarea name="album">
+            <area>270,200,240,150</area>
+            <font>other</font>
+            <align>allcenter</align>
+            <multiline>no</multiline>
+	    <value>No album name, yet</value>
+        </textarea>
+
+        <textarea name="playtime">
+            <area>270,250,240,150</area>
+            <font>other</font>
+            <align>allcenter</align>
+            <multiline>no</multiline>
+	    <value>0:00</value>
+        </textarea>
+
+	<button name="logoutBtn" from="basewidebutton">
+            <position>50,560</position>
+            <value>Logout</value>
+        </button>
+
+	<button name="stationsBtn" from="basewidebutton">
+            <position>500,560</position>
+            <value>Select Station</value>
+        </button>
+
+        <textarea name="outtext">
+            <area>10,500,240,500</area>
+            <font>debug</font>
+            <align>allcenter</align>
+            <multiline>no</multiline>
+	    <value></value>
+        </textarea>
+
+    </window>
+
+    <window name="pandorasettings">
+      <textarea name="title">
+            <area>10,10,780,60</area>
+            <font>baselarge</font>
+            <align>allcenter</align>
+            <multiline>yes</multiline>
+            <value>Pandora Settings</value>
+        </textarea>
+
+      <textarea name="description">
+            <area>10,80,780,120</area>
+            <font>small</font>
+            <align>allcenter</align>
+            <multiline>yes</multiline>
+            <value>Please enter your Pandora username and password.  If you do not have a username or password, you can create one at www.pandora.com.  If you find that this service is useful, please consider upgrading your account to a paid subscription.</value>
+        </textarea>
+
+
+        <textarea name="username_area" from="basetextarea">
+          <area>100,335,780,60</area>
+          <value>Username:</value>
+	</textarea>
+
+        <textedit name="username" from="basetextedit">
+            <position>200,325</position>
+        </textedit>
+
+        <textarea name="password_area" from="basetextarea">
+          <area>100,435,780,60</area>
+          <value>Password:</value>
+	</textarea>
+
+        <textedit name="password" from="basetextedit">
+          <position>200,425</position>
+        </textedit>
+
+	<button name="loginBtn" from="basewidebutton">
+            <position>200,560</position>
+            <value>Login</value>
+        </button>
+
+        <textarea name="outtext">
+            <area>10,500,500,500</area>
+            <font>debug</font>
+            <align>allcenter</align>
+            <multiline>no</multiline>
+	    <value></value>
+        </textarea>
+        
+    </window>
+
+
+    <window name="pandorastations">
+      <textarea name="title">
+            <area>10,10,780,60</area>
+            <font>baselarge</font>
+            <align>allcenter</align>
+            <multiline>yes</multiline>
+            <value>Pandora Stations</value>
+        </textarea>
+
+        <buttonlist name="stations" from="basebuttonlist">
+            <position>250,150</position>
+            <align>allcenter</align>
+        </buttonlist>
+        
+    </window>
+
+</mythuitheme>

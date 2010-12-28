@@ -1,0 +1,6 @@
+move this directory into mythplugins/
+
+run:
+ qmake
+ make
+ sudo make install
