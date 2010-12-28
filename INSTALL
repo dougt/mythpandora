@@ -4,3 +4,12 @@ run:
  qmake
  make
  sudo make install
+
+
+In one of your UI files (mainmenu.xml), add the following:
+
+<button>
+   <type>PANDORA_MYTH</type>
+   <text>Pandora Myth</text>
+   <action>PLUGIN mythpandora</action>
+</button>
