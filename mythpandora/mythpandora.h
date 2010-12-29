@@ -65,7 +65,8 @@ class MythPianoService : public QObject
   MythPianoService();
   ~MythPianoService();
 
-  int Login();
+  int  Login();
+  void Logout();
   void PauseToggle();
   void GetPlaylist();
 
@@ -91,13 +92,22 @@ class MythPianoService : public QObject
   WaitressReturn_t PianoHttpRequest(WaitressHandle_t *waith,
 				    PianoRequest_t *req);
 
-  PianoHandle_t      m_Piano;
+  PianoSong_t* GetCurrentSong() { return m_CurrentSong; };
+  PianoStation_t* GetStations() { return m_Piano->stations; };
+  PianoStation_t* GetCurrentStation() { return m_CurrentStation; };
+  void SetCurrentStation(PianoStation_t* s) { m_CurrentStation = s; };
+  void GetTimes(long *played, long *duration) {
+    *played   = m_Player.songPlayed;
+    *duration = m_Player.songDuration;
+  };
+
+ private:
+  PianoHandle_t*     m_Piano;
   WaitressHandle_t   m_Waith;
   struct audioPlayer m_Player;
   pthread_t          m_PlayerThread;
   AudioOutput*       m_AudioOutput;
   PianoSong_t*       m_Playlist;
-  PianoStation_t*    m_Station;
 
   PianoStation_t*    m_CurrentStation;
   PianoSong_t*       m_CurrentSong;
@@ -105,7 +115,7 @@ class MythPianoService : public QObject
   MythPianoServiceListener* m_Listener;
 
   QTimer*            m_Timer;
-
+  
   private slots:
     void heartbeat(void);
 };

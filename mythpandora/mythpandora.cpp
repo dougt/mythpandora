@@ -39,30 +39,24 @@ THE SOFTWARE.
 
 
 MythPianoService::MythPianoService() 
-  : m_PlayerThread(NULL),
+  : m_Piano(NULL),
+    m_PlayerThread(NULL),
     m_AudioOutput(NULL),
     m_Playlist(NULL),
-    m_Station(NULL),
     m_CurrentStation(NULL),
     m_CurrentSong(NULL),
     m_Listener(NULL),
     m_Timer(NULL)
 {
-  PianoInit (&m_Piano);
-
-  WaitressInit (&m_Waith);
-  strncpy (m_Waith.host, PIANO_RPC_HOST, sizeof (m_Waith.host)-1);
-  strncpy (m_Waith.port, PIANO_RPC_PORT, sizeof (m_Waith.port)-1);
-
-  memset (&m_Player, 0, sizeof (m_Player));
 }
 
 MythPianoService::~MythPianoService() {
-  PianoDestroy (&m_Piano);
   if (m_AudioOutput) {
     delete m_AudioOutput;
     m_AudioOutput = NULL;
   }
+  if (m_Piano)
+    Logout();
 }
 
 void
@@ -99,8 +93,31 @@ void MythPianoService::PauseToggle()
   }
 }
 
+void MythPianoService::Logout()
+{
+  PianoDestroy(m_Piano);
+  m_Piano = NULL;
+
+  PianoDestroyPlaylist(m_Playlist);
+  m_Playlist = NULL;
+  m_CurrentSong = NULL;
+
+  // Leak?
+  m_CurrentStation = NULL;
+}
+
 int MythPianoService::Login()
 {
+  m_Piano = (PianoHandle_t*) malloc(sizeof(PianoHandle_t));
+  PianoInit (m_Piano);
+
+  WaitressInit (&m_Waith);
+  strncpy (m_Waith.host, PIANO_RPC_HOST, sizeof (m_Waith.host)-1);
+  strncpy (m_Waith.port, PIANO_RPC_PORT, sizeof (m_Waith.port)-1);
+
+  memset (&m_Player, 0, sizeof (m_Player));
+
+
   QString username = gCoreContext->GetSetting("pandora-username");
   QString password = gCoreContext->GetSetting("pandora-password");
 
@@ -128,8 +145,7 @@ int MythPianoService::Login()
     return -1;
   }
 
-  m_Station = m_Piano.stations;
-  m_CurrentStation = m_Station;
+  m_CurrentStation = m_Piano->stations;
   return 0;
 }
 
@@ -295,6 +311,9 @@ MythPianoService::PianoCall(PianoRequestType_t type,
 			    void *data,
 			    PianoReturn_t *pRet,
 			    WaitressReturn_t *wRet) {
+  if (!m_Piano)
+    return -1;
+
   PianoRequest_t req;
   memset (&req, 0, sizeof (req));
 
@@ -302,7 +321,7 @@ MythPianoService::PianoCall(PianoRequestType_t type,
   do {
     req.data = data;
 
-    *pRet = PianoRequest (&m_Piano, &req, type);
+    *pRet = PianoRequest (m_Piano, &req, type);
 
     if (*pRet != PIANO_RET_OK) {
       BroadcastMessage("Error: %s\n", PianoErrorToStr (*pRet));
@@ -320,7 +339,7 @@ MythPianoService::PianoCall(PianoRequestType_t type,
       return 0;
     }
 
-    *pRet = PianoResponse (&m_Piano, &req);
+    *pRet = PianoResponse (m_Piano, &req);
     if (*pRet != PIANO_RET_CONTINUE_REQUEST) {
       /* checking for request type avoids infinite loops */
       if (*pRet == PIANO_RET_AUTH_TOKEN_INVALID &&
@@ -448,10 +467,10 @@ void
 MythPandora::RecvMessage(const char* message) {
   if (!strcmp(message, "New Song")) {
     MythPianoService* service = GetMythPianoService();
-    if (service->m_CurrentSong) {
-      m_songText->SetText(QString(service->m_CurrentSong->title));
-      m_artistText->SetText(QString(service->m_CurrentSong->artist));
-      m_albumText->SetText(QString(service->m_CurrentSong->album));
+    if (service->GetCurrentSong()) {
+      m_songText->SetText(QString(service->GetCurrentSong()->title));
+      m_artistText->SetText(QString(service->GetCurrentSong()->artist));
+      m_albumText->SetText(QString(service->GetCurrentSong()->album));
       m_playTimeText->SetText(QString("0:00"));
 
       // kick off cover art load
@@ -463,7 +482,7 @@ MythPandora::RecvMessage(const char* message) {
 
       m_coverArtFetcher = new QHttp();
       connect(m_coverArtFetcher, SIGNAL(done(bool)), this, SLOT(coverArtFetched()));  
-      QUrl u(service->m_CurrentSong->coverArt);
+      QUrl u(service->GetCurrentSong()->coverArt);
       QHttp::ConnectionMode conn_mode = QHttp::ConnectionModeHttp;
       m_coverArtFetcher->setHost(u.host(), conn_mode, 80);
       QByteArray path = QUrl::toPercentEncoding(u.path(), "!$&'()*+,;=:@/");
@@ -533,7 +552,7 @@ bool MythPandora::Create(void)
 
   MythPianoService* service = GetMythPianoService();
 
-  m_stationText->SetText(QString(service->m_CurrentStation->name));
+  m_stationText->SetText(QString(service->GetCurrentStation()->name));
 
   service->SetMessageListener(this);
 
@@ -553,11 +572,13 @@ MythPandora::heartbeat(void)
 {
   char buffer[128];
   MythPianoService* service = GetMythPianoService();
+  long played = 0, duration = 0;
+  service->GetTimes(&played, &duration);
   sprintf(buffer, "%02i:%02i / %02i:%02i\n",
-	  (int) service->m_Player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-	  (int) service->m_Player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR % 60,	 
-	  (int) service->m_Player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-	  (int) service->m_Player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
+	  (int) played / BAR_PLAYER_MS_TO_S_FACTOR / 60,
+	  (int) played / BAR_PLAYER_MS_TO_S_FACTOR % 60,	 
+	  (int) duration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
+	  (int) duration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
 
   m_playTimeText->SetText(QString(buffer));
 }
@@ -623,6 +644,10 @@ void MythPandora::logoutCallback()
   // Not really sure if we should blow these away.  Instead, just go back to the login dialog.
   //  gCoreContext->SaveSetting("pandora-username", QString(""));
   //  gCoreContext->SaveSetting("pandora-password", QString(""));
+
+  MythPianoService* service = GetMythPianoService();
+  service->StopPlayback();
+  service->Logout();
 
   Close();
   showLoginDialog();
@@ -741,7 +766,7 @@ MythPandoraStationSelect::Create(void)
   BuildFocusList();
 
   MythPianoService* service = GetMythPianoService();
-  PianoStation_t* head = service->m_Station;
+  PianoStation_t* head = service->GetStations();
 
   while (head) {
     MythUIButtonListItem* item = new MythUIButtonListItem(m_stations, QString(head->name));
@@ -776,7 +801,7 @@ MythPandoraStationSelect::stationSelectedCallback(MythUIButtonListItem *item)
   QString name = item->GetData().toString();
 
   // find it.  XXX it would be better to save the station in the data.
-  PianoStation_t* head = service->m_Station;
+  PianoStation_t* head = service->GetStations();
   while (head) { 
     if (QString(head->name) == name) {
       break;
@@ -784,7 +809,7 @@ MythPandoraStationSelect::stationSelectedCallback(MythUIButtonListItem *item)
     head = head->next;
   }
 
-  service->m_CurrentStation = head;
+  service->SetCurrentStation(head);
   if (head == NULL)
     return;
 
