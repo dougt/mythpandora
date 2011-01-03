@@ -23,6 +23,7 @@ THE SOFTWARE.
 
 // POSIX headers
 #include <unistd.h>
+#include <assert.h>
 
 #include <QUrl>
 
@@ -50,11 +51,11 @@ MythPianoService::MythPianoService()
 {
 }
 
-MythPianoService::~MythPianoService() {
-  if (m_AudioOutput) {
-    delete m_AudioOutput;
-    m_AudioOutput = NULL;
-  }
+MythPianoService::~MythPianoService()
+{
+  // This really should have already been deleted by StopPlayback()
+  assert(!m_AudioOutput);
+
   if (m_Piano)
     Logout();
 }
@@ -80,7 +81,7 @@ void MythPianoService::BroadcastMessage(const char *format, ...)
   buffer.vsprintf(format, args);
   va_end(args);
 
-  printf("**** MythPianoService: %s\n", buffer.ascii());
+  //  printf("**** MythPianoService: %s\n", buffer.ascii());
 
   if (m_Listener)
     m_Listener->RecvMessage(buffer.ascii());
@@ -230,15 +231,17 @@ MythPianoService::StopPlayback()
     m_Timer = NULL;
   }
 
-  if (m_AudioOutput)
-    m_AudioOutput->Reset();
-
   if (m_PlayerThread) {
     m_Player.doQuit = true;
     pthread_mutex_unlock(&m_Player.pauseMutex);
     pthread_join(m_PlayerThread, NULL);
 
     m_PlayerThread = NULL;
+  }
+
+  if (m_AudioOutput) {
+    delete m_AudioOutput;
+    m_AudioOutput = NULL;
   }
 }
 
@@ -405,9 +408,10 @@ MythPianoService::PianoCall(PianoRequestType_t type,
 void MythPianoService::WriteAudio(char* samples, size_t bytes)
 {
   if (!m_AudioOutput) {
+
     BroadcastMessage("Setting up audio rate(%d), channels(%d)\n",
-	 m_Player.samplerate,
-	 m_Player.channels);
+                     m_Player.samplerate,
+                     m_Player.channels);
 
     QString passthru = gCoreContext->GetNumSetting("PassThruDeviceOverride", false) ? gCoreContext->GetSetting("PassThruOutputDevice") : QString::null;
     QString main = gCoreContext->GetSetting("AudioOutputDevice");
