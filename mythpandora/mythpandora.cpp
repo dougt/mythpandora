@@ -597,45 +597,44 @@ bool MythPandora::keyPressEvent(QKeyEvent *event)
   QStringList actions;
   handled = GetMythMainWindow()->TranslateKeyPress("MythPandora", event, actions);
 
-  for (int i = 0; i < actions.size() && !handled; i++)
+  for (int i = 0; i < actions.size() && !handled; i++) {
+    QString action = actions[i];
+    handled = true;
+    
+    if (action == "ESCAPE") {
+      Close();
+    }
+    else if (action == "NEXTTRACK")
     {
-      QString action = actions[i];
-      handled = true;
-
-      if (action == "ESCAPE") {
-	Close();
-      }
-      else if (action == "NEXTTRACK")
-        {
 	  printf("Next track\n");
-        }
-      else if (action == "PAUSE" || action == "PLAY")
-        {
+    }
+    else if (action == "PAUSE" || action == "PLAY")
+    {
 	  MythPianoService* service = GetMythPianoService();
 	  service->PauseToggle();
 	}
-
-      else if (action == "MUTE")
+    
+    else if (action == "MUTE")
 	{
 	  // XXX UI needed
 	  MythPianoService* service = GetMythPianoService();
 	  service->ToggleMute();
 	}
-      else if (action == "VOLUMEDOWN")
+    else if (action == "VOLUMEDOWN")
 	{
 	  // XXX UI needed
 	  MythPianoService* service = GetMythPianoService();
 	  service->VolumeDown();
 	}
-      else if (action == "VOLUMEUP")
+    else if (action == "VOLUMEUP")
 	{
 	  // XXX UI needed
 	  MythPianoService* service = GetMythPianoService();
 	  service->VolumeUp();
 	}
-      else
-	handled = false;
-    }
+    else
+      handled = false;
+  }
 
   if (!handled && MythScreenType::keyPressEvent(event))
     handled = true;
