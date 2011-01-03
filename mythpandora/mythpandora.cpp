@@ -602,7 +602,7 @@ bool MythPandora::keyPressEvent(QKeyEvent *event)
     handled = true;
     
     if (action == "ESCAPE") {
-      Close();
+      GetScreenStack()->PopScreen(false, true);
     }
     else if (action == "NEXTTRACK")
     {
@@ -652,13 +652,13 @@ void MythPandora::logoutCallback()
   service->StopPlayback();
   service->Logout();
 
-  Close();
+  GetScreenStack()->PopScreen(false, true);
   showLoginDialog();
 }
 
 void MythPandora::selectStationCallback()
 {
-  Close();
+  GetScreenStack()->PopScreen(false, true);
   showStationSelectDialog();
 }
 
@@ -732,7 +732,7 @@ void MythPandoraConfig::loginCallback()
 
   MythPianoService* service = GetMythPianoService();
   if (service->Login() == 0) {
-    Close();
+    GetScreenStack()->PopScreen(false, true);
     showStationSelectDialog();
   }
 }
@@ -816,6 +816,6 @@ MythPandoraStationSelect::stationSelectedCallback(MythUIButtonListItem *item)
   if (head == NULL)
     return;
 
-  Close();
+  GetScreenStack()->PopScreen(false, true);
   showPlayerDialog();
 }
